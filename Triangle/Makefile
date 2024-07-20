@@ -9,8 +9,8 @@ else
 CFLAGS = $(RELEASE_CFLAGS)
 endif
 
-Triangle: main.cpp
-	g++ $(CFLAGS) -o Triangle main.cpp $(LDFLAGS)
+Triangle: main.cc
+	g++ $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 .PHONY: test clean
 
