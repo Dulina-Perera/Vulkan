@@ -10,7 +10,7 @@ CFLAGS = $(RELEASE_CFLAGS)
 endif
 
 Triangle: main.cc
-	g++ $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	clang++ $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 .PHONY: test clean
 
