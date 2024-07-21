@@ -3,7 +3,9 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <format>
 #include <iostream>
+#include <map>
 #include <set>
 #include <stdexcept>
 #include <vector>
@@ -250,12 +252,41 @@ private:
 		}
 	}
 
+	int rateDeviceSuitability(VkPhysicalDevice device)
+	{
+		VkPhysicalDeviceProperties deviceProperties;
+		VkPhysicalDeviceFeatures deviceFeatures;
+
+		vkGetPhysicalDeviceProperties(device, &deviceProperties);
+		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+		int score = 0;
+
+		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+		{
+			score += 1000;
+		}
+
+		score += deviceProperties.limits.maxImageDimension2D;
+
+		if (!deviceFeatures.geometryShader)
+		{
+			return 0;
+		}
+
+		return score;
+	}
+
 	bool isDeviceSuitable(VkPhysicalDevice device)
 	{
 		VkPhysicalDeviceProperties deviceProperties;
-		vkGetPhysicalDeviceProperties(device, &deviceProperties);
+		VkPhysicalDeviceFeatures deviceFeatures;
 
-		return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+		vkGetPhysicalDeviceProperties(device, &deviceProperties);
+		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+		return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+					 deviceFeatures.geometryShader;
 	}
 
 	void pickupPhysicalDevice()
@@ -270,15 +301,22 @@ private:
 		std::vector<VkPhysicalDevice> devices(deviceCount);
 		vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
+		std::multimap<int, VkPhysicalDevice> candidates;
+
 		for (const VkPhysicalDevice &device : devices)
 		{
-			if (isDeviceSuitable(device))
-			{
-				physicalDevice = device;
-				break;
-			}
+			int score = rateDeviceSuitability(device);
+			candidates.insert(std::make_pair(score, device));
 		}
-		if (physicalDevice == VK_NULL_HANDLE)
+		if (candidates.rbegin()->first > 0)
+		{
+			physicalDevice = candidates.rbegin()->second;
+
+			VkPhysicalDeviceProperties deviceProperties;
+			vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+			std::cout << std::format("Selected Physical Device: {} (Score: {})\n", deviceProperties.deviceName, candidates.rbegin()->first) << std::endl;
+		}
+		else
 		{
 			throw std::runtime_error("Failed to find a suitable GPU!");
 		}
