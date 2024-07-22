@@ -1,5 +1,12 @@
+#define VK_USE_PLATFORM_XCB_KHR
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_X11
+#include <GLFW/glfw3native.h>
+
+#include <X11/Xlib.h>
+#include <X11/Xlib-xcb.h>
+#include <xcb/xcb.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -76,6 +83,7 @@ private:
 	GLFWwindow *window;
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
+	VkSurfaceKHR surface;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice logicalDevice;
 	VkQueue graphicsQueue;
@@ -273,6 +281,28 @@ private:
 		}
 	}
 
+	void createSurface()
+	{
+		// Display *display = glfwGetX11Display();
+		// xcb_connection_t *connection = XGetXCBConnection(display);
+		// if (!connection)
+		// {
+		// 	throw std::runtime_error("Failed to get XCB connection from X11 display!");
+		// }
+
+		// VkXcbSurfaceCreateInfoKHR createInfo{};
+		// createInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+		// createInfo.connection = connection;
+		// createInfo.window = static_cast<xcb_window_t>(glfwGetX11Window(window));
+
+		// VkResult result = vkCreateXcbSurfaceKHR(instance, &createInfo, nullptr, &surface);
+		VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+		if (result != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create window surface!");
+		}
+	}
+
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
 	{
 		QueueFamilyIndices indices;
@@ -416,6 +446,7 @@ private:
 	{
 		createInstance();
 		setupDebugMessenger();
+		createSurface();
 		pickupPhysicalDevice();
 		createLogicalDevice();
 	}
@@ -429,6 +460,7 @@ private:
 			DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 		}
 
+		vkDestroySurfaceKHR(instance, surface, nullptr);
 		vkDestroyInstance(instance, nullptr);
 
 		glfwDestroyWindow(window);
