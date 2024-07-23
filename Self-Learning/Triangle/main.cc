@@ -61,10 +61,11 @@ void DestroyDebugUtilsMessengerEXT(
 struct QueueFamilyIndices
 {
 	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentationFamily;
 
 	bool isComplete()
 	{
-		return graphicsFamily.has_value();
+		return graphicsFamily.has_value() && presentationFamily.has_value();
 	}
 };
 
@@ -319,6 +320,13 @@ private:
 			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 			{
 				indices.graphicsFamily = i;
+			}
+
+			VkBool32 presentationSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentationSupport);
+			if (presentationSupport)
+			{
+				indices.presentationFamily = i;
 			}
 
 			if (indices.isComplete())
