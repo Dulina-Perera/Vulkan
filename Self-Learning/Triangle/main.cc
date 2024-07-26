@@ -71,6 +71,13 @@ struct QueueFamilyIndices
 	}
 };
 
+struct SwapChainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR capabilities;
+	std::vector<VkSurfaceFormatKHR> formats;
+	std::vector<VkPresentModeKHR> presentationModes;
+};
+
 class Triangle
 {
 public:
@@ -236,6 +243,119 @@ private:
 		createInfo.pfnUserCallback = debugCallback;
 	}
 
+	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
+	{
+		QueueFamilyIndices indices;
+
+		uint32_t queueFamilyCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+		int i = 0;
+		for (const VkQueueFamilyProperties &queueFamily : queueFamilies)
+		{
+			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			{
+				indices.graphicsFamily = i;
+			}
+
+			VkBool32 presentationSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentationSupport);
+			if (presentationSupport)
+			{
+				indices.presentationFamily = i;
+			}
+
+			if (indices.isComplete())
+			{
+				break;
+			}
+
+			i++;
+		}
+
+		return indices;
+	}
+
+	int rateDeviceSuitability(VkPhysicalDevice device)
+	{
+		VkPhysicalDeviceProperties deviceProperties;
+		VkPhysicalDeviceFeatures deviceFeatures;
+
+		vkGetPhysicalDeviceProperties(device, &deviceProperties);
+		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+		int score = 0;
+
+		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+		{
+			score += 1000;
+		}
+
+		score += deviceProperties.limits.maxImageDimension2D;
+
+		bool swapChainAdequate = false;
+		if (areDeviceExtensionsSupported(device))
+		{
+			SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentationModes.empty();
+		}
+
+		if (
+			deviceFeatures.geometryShader &&
+			findQueueFamilies(device).isComplete() &&
+			areDeviceExtensionsSupported(device) &&
+			swapChainAdequate)
+		{
+			return score;
+		}
+		else {
+			return 0;
+		}
+	}
+
+	bool isDeviceSuitable(VkPhysicalDevice device)
+	{
+		VkPhysicalDeviceProperties deviceProperties;
+		VkPhysicalDeviceFeatures deviceFeatures;
+
+		vkGetPhysicalDeviceProperties(device, &deviceProperties);
+		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+		return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+					 deviceFeatures.geometryShader &&
+					 findQueueFamilies(device).isComplete();
+	}
+
+	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device)
+	{
+		SwapChainSupportDetails details;
+
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+		uint32_t formatCount;
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+
+		if (formatCount != 0)
+		{
+			details.formats.resize(formatCount);
+			vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+		}
+
+		uint32_t presentationModeCount;
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentationModeCount, nullptr);
+
+		if (presentationModeCount != 0)
+		{
+			details.presentationModes.resize(presentationModeCount);
+			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentationModeCount, details.presentationModes.data());
+		}
+
+		return details;
+	}
+
 	void createInstance()
 	{
 		if (enableValidationLayers && !areValidationLayersSupported())
@@ -323,83 +443,6 @@ private:
 		{
 			throw std::runtime_error("Failed to create window surface!");
 		}
-	}
-
-	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
-	{
-		QueueFamilyIndices indices;
-
-		uint32_t queueFamilyCount = 0;
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-		int i = 0;
-		for (const VkQueueFamilyProperties &queueFamily : queueFamilies)
-		{
-			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-			{
-				indices.graphicsFamily = i;
-			}
-
-			VkBool32 presentationSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentationSupport);
-			if (presentationSupport)
-			{
-				indices.presentationFamily = i;
-			}
-
-			if (indices.isComplete())
-			{
-				break;
-			}
-
-			i++;
-		}
-
-		return indices;
-	}
-
-	int rateDeviceSuitability(VkPhysicalDevice device)
-	{
-		VkPhysicalDeviceProperties deviceProperties;
-		VkPhysicalDeviceFeatures deviceFeatures;
-
-		vkGetPhysicalDeviceProperties(device, &deviceProperties);
-		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
-		int score = 0;
-
-		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-		{
-			score += 1000;
-		}
-
-		score += deviceProperties.limits.maxImageDimension2D;
-
-		if (
-				!deviceFeatures.geometryShader ||
-				!findQueueFamilies(device).isComplete() ||
-				!areDeviceExtensionsSupported(device))
-		{
-			return 0;
-		}
-
-		return score;
-	}
-
-	bool isDeviceSuitable(VkPhysicalDevice device)
-	{
-		VkPhysicalDeviceProperties deviceProperties;
-		VkPhysicalDeviceFeatures deviceFeatures;
-
-		vkGetPhysicalDeviceProperties(device, &deviceProperties);
-		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
-		return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-					 deviceFeatures.geometryShader &&
-					 findQueueFamilies(device).isComplete();
 	}
 
 	void pickupPhysicalDevice()
