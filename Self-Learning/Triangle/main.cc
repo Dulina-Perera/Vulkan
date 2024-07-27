@@ -370,6 +370,19 @@ private:
 		return availableFormats[0];
 	}
 
+	VkPresentModeKHR chooseSwapPresentationMode(const std::vector<VkPresentModeKHR> &availablePresentationModes)
+	{
+		for (const VkPresentModeKHR &availablePresentationMode : availablePresentationModes)
+		{
+			if (availablePresentationMode == VK_PRESENT_MODE_MAILBOX_KHR)
+			{
+				return availablePresentationMode;
+			}
+		}
+
+		return VK_PRESENT_MODE_FIFO_KHR;
+	}
+
 	void createInstance()
 	{
 		if (enableValidationLayers && !areValidationLayersSupported())
