@@ -102,6 +102,9 @@ private:
 	VkQueue graphicsQueue;
 	VkQueue presentationQueue;
 	VkSwapchainKHR swapChain;
+	VkFormat swapChainImageFormat;
+	VkExtent2D swapChainExtent;
+	std::vector<VkImage> swapChainImages;
 
 	bool areDeviceExtensionsSupported(VkPhysicalDevice device)
 	{
@@ -383,6 +386,9 @@ private:
 			imageCount = swapChainSupport.capabilities.maxImageCount;
 		}
 
+		swapChainImageFormat = surfaceFormat.format;
+		swapChainExtent = extent;
+
 		VkSwapchainCreateInfoKHR createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 		createInfo.surface = surface;
@@ -420,6 +426,10 @@ private:
 		{
 			throw std::runtime_error("Failed to create swap chain!");
 		}
+
+		vkGetSwapchainImagesKHR(logicalDevice, swapChain, &imageCount, nullptr);
+		swapChainImages.resize(imageCount);
+		vkGetSwapchainImagesKHR(logicalDevice, swapChain, &imageCount, swapChainImages.data());
 	}
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
