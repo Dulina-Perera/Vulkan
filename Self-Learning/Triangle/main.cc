@@ -258,6 +258,11 @@ private:
 		glfwTerminate();
 	}
 
+	void createGraphicsPipeline()
+	{
+
+	}
+
 	void createImageViews()
 	{
 		swapChainImageViews.resize(swapChainImages.size());
@@ -549,6 +554,7 @@ private:
 		createLogicalDevice();
 		createSwapChain();
 		createImageViews();
+		createGraphicsPipeline();
 	}
 
 	void initWindow()
