@@ -312,6 +312,12 @@ private:
 		rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 		rasterizerInfo.depthBiasEnable = VK_FALSE;
 
+		// Multisampling
+		VkPipelineMultisampleStateCreateInfo multisamplingInfo{};
+		multisamplingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisamplingInfo.sampleShadingEnable = VK_FALSE;
+		multisamplingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
 		// Dynamic states
 		std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 		VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
