@@ -116,6 +116,8 @@ private:
 	VkRenderPass renderPass;
 	VkPipelineLayout pipelineLayout;
 
+	VkPipeline graphicsPipeline;
+
 	bool areDeviceExtensionsSupported(VkPhysicalDevice device)
 	{
 		uint32_t extensionCount;
@@ -246,6 +248,8 @@ private:
 
 	void cleanup()
 	{
+		vkDestroyPipeline(logicalDevice, graphicsPipeline, nullptr);
+
 		vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
 		vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
 
@@ -371,6 +375,26 @@ private:
 		{
 			throw std::runtime_error("Failed to create pipeline layout!");
 		}
+
+		VkGraphicsPipelineCreateInfo pipelineInfo{};
+		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		pipelineInfo.stageCount = 2;
+		pipelineInfo.pStages = shaderStages;
+		pipelineInfo.pVertexInputState = &vertexInputInfo;
+		pipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
+		pipelineInfo.pViewportState = &viewportStateInfo;
+		pipelineInfo.pRasterizationState = &rasterizerInfo;
+		pipelineInfo.pMultisampleState = &multisamplingInfo;
+		pipelineInfo.pDepthStencilState = nullptr;
+		pipelineInfo.pColorBlendState = &colorBlendingInfo;
+		pipelineInfo.pDynamicState = &dynamicStateInfo;
+		pipelineInfo.layout = pipelineLayout;
+		pipelineInfo.renderPass = renderPass;
+		pipelineInfo.subpass = 0;
+		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+		pipelineInfo.basePipelineIndex = -1;
+
+		result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline);
 
 		vkDestroyShaderModule(logicalDevice, fragShaderModule, nullptr);
 		vkDestroyShaderModule(logicalDevice, vertShaderModule, nullptr);
