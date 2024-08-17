@@ -9,6 +9,7 @@
 #include <xcb/xcb.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -377,7 +378,7 @@ private:
 	{
 		swapChainImageViews.resize(swapChainImages.size());
 
-		for (size_t i = 0; i < swapChainImages.size(); i++)
+		for (std::size_t i = 0; i < swapChainImages.size(); i++)
 		{
 			VkImageViewCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -498,6 +499,11 @@ private:
 
 		vkGetDeviceQueue(logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
 		vkGetDeviceQueue(logicalDevice, indices.presentationFamily.value(), 0, &presentationQueue);
+	}
+
+	void createRenderPass()
+	{
+
 	}
 
 	VkShaderModule createShaderModule(const std::vector<char> &code)
@@ -681,6 +687,7 @@ private:
 		createLogicalDevice();
 		createSwapChain();
 		createImageViews();
+		createRenderPass();
 		createGraphicsPipeline();
 	}
 
@@ -793,7 +800,7 @@ private:
 			throw std::runtime_error("Failed to open file!");
 		}
 
-		size_t fileSize = (size_t)file.tellg();
+		std::size_t fileSize = (std::size_t)file.tellg();
 		std::vector<char> buffer(fileSize);
 
 		file.seekg(0);
