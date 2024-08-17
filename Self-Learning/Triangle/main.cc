@@ -95,18 +95,24 @@ public:
 
 private:
 	GLFWwindow *window;
+
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkSurfaceKHR surface;
+
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice logicalDevice;
+
 	VkQueue graphicsQueue;
 	VkQueue presentationQueue;
+
 	VkSwapchainKHR swapChain;
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
+
+	VkPipelineLayout pipelineLayout;
 
 	bool areDeviceExtensionsSupported(VkPhysicalDevice device)
 	{
@@ -238,6 +244,8 @@ private:
 
 	void cleanup()
 	{
+		vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
+
 		for (VkImageView imageView : swapChainImageViews)
 		{
 			vkDestroyImageView(logicalDevice, imageView, nullptr);
@@ -346,6 +354,20 @@ private:
 		dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 		dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
 		dynamicStateInfo.pDynamicStates = dynamicStates.data();
+
+		// Pipeline layout
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		pipelineLayoutInfo.setLayoutCount = 0;
+		pipelineLayoutInfo.pSetLayouts = nullptr;
+		pipelineLayoutInfo.pushConstantRangeCount = 0;
+		pipelineLayoutInfo.pPushConstantRanges = nullptr;
+
+		VkResult result = vkCreatePipelineLayout(logicalDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout);
+		if (result != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create pipeline layout!");
+		}
 
 		vkDestroyShaderModule(logicalDevice, fragShaderModule, nullptr);
 		vkDestroyShaderModule(logicalDevice, vertShaderModule, nullptr);
