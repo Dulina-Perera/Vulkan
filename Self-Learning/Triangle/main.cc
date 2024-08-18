@@ -764,7 +764,8 @@ private:
 
 	void drawFrame()
 	{
-
+		vkWaitForFences(logicalDevice, 1, &inFlightFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+		vkResetFences(logicalDevice, 1, &inFlightFence);
 	}
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
