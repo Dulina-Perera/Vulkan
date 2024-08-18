@@ -973,6 +973,20 @@ private:
 		}
 	}
 
+	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+	{
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = 0;
+		beginInfo.pInheritanceInfo = nullptr;
+
+		VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+		if (result != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to begin recording command buffer!");
+		}
+	}
+
 	void setupDebugMessenger()
 	{
 		if (!enableValidationLayers)
