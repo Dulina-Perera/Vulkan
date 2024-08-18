@@ -116,8 +116,9 @@ private:
 
 	VkRenderPass renderPass;
 	VkPipelineLayout pipelineLayout;
-
 	VkPipeline graphicsPipeline;
+
+	VkCommandPool commandPool;
 
 	bool areDeviceExtensionsSupported(VkPhysicalDevice device)
 	{
@@ -249,13 +250,14 @@ private:
 
 	void cleanup()
 	{
+		vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
+
 		for (VkFramebuffer framebuffer : swapChainFramebuffers)
 		{
 			vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
 		}
 
 		vkDestroyPipeline(logicalDevice, graphicsPipeline, nullptr);
-
 		vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
 		vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
 
@@ -278,6 +280,22 @@ private:
 
 		glfwDestroyWindow(window);
 		glfwTerminate();
+	}
+
+	void createCommandPool()
+	{
+		QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
+
+		VkCommandPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+		VkResult result = vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, &commandPool);
+		if (result != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create command pool!");
+		}
 	}
 
 	void createFrameBuffers()
@@ -777,6 +795,7 @@ private:
 		createRenderPass();
 		createGraphicsPipeline();
 		createFrameBuffers();
+		createCommandPool();
 	}
 
 	void initWindow()
