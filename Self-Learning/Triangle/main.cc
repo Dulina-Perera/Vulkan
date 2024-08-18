@@ -119,6 +119,7 @@ private:
 	VkPipeline graphicsPipeline;
 
 	VkCommandPool commandPool;
+	VkCommandBuffer commandBuffer;
 
 	bool areDeviceExtensionsSupported(VkPhysicalDevice device)
 	{
@@ -280,6 +281,21 @@ private:
 
 		glfwDestroyWindow(window);
 		glfwTerminate();
+	}
+
+	void createCommandBuffer()
+	{
+		VkCommandBufferAllocateInfo allocateInfo{};
+		allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocateInfo.commandPool = commandPool;
+		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocateInfo.commandBufferCount = 1;
+
+		VkResult result = vkAllocateCommandBuffers(logicalDevice, &allocateInfo, &commandBuffer);
+		if (result != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to allocate command buffer!");
+		}
 	}
 
 	void createCommandPool()
@@ -796,6 +812,7 @@ private:
 		createGraphicsPipeline();
 		createFrameBuffers();
 		createCommandPool();
+		createCommandBuffer();
 	}
 
 	void initWindow()
