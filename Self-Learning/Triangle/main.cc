@@ -121,6 +121,10 @@ private:
 	VkCommandPool commandPool;
 	VkCommandBuffer commandBuffer;
 
+	VkSemaphore imageAvailableSemaphore;
+	VkSemaphore renderFinishedSemaphore;
+	VkFence inFlightFence;
+
 	bool areDeviceExtensionsSupported(VkPhysicalDevice device)
 	{
 		uint32_t extensionCount;
@@ -251,6 +255,10 @@ private:
 
 	void cleanup()
 	{
+		vkDestroySemaphore(logicalDevice, renderFinishedSemaphore, nullptr);
+		vkDestroySemaphore(logicalDevice, imageAvailableSemaphore, nullptr);
+		vkDestroyFence(logicalDevice, inFlightFence, nullptr);
+
 		vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 
 		for (VkFramebuffer framebuffer : swapChainFramebuffers)
@@ -726,6 +734,39 @@ private:
 		vkGetSwapchainImagesKHR(logicalDevice, swapChain, &imageCount, swapChainImages.data());
 	}
 
+	void createSyncObjects()
+	{
+		VkSemaphoreCreateInfo semaphoreInfo{};
+		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+		VkFenceCreateInfo fenceInfo{};
+		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+		VkResult result = vkCreateSemaphore(logicalDevice, &semaphoreInfo, nullptr, &imageAvailableSemaphore);
+		if (result != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create image available semaphore!");
+		}
+
+		result = vkCreateSemaphore(logicalDevice, &semaphoreInfo, nullptr, &renderFinishedSemaphore);
+		if (result != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create render finished semaphore!");
+		}
+
+		result = vkCreateFence(logicalDevice, &fenceInfo, nullptr, &inFlightFence);
+		if (result != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create in flight fence!");
+		}
+	}
+
+	void drawFrame()
+	{
+
+	}
+
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 			VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 			VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -813,6 +854,7 @@ private:
 		createFrameBuffers();
 		createCommandPool();
 		createCommandBuffer();
+		createSyncObjects();
 	}
 
 	void initWindow()
@@ -843,6 +885,7 @@ private:
 		while (!glfwWindowShouldClose(window))
 		{
 			glfwPollEvents();
+			drawFrame();
 		}
 	}
 
@@ -998,6 +1041,32 @@ private:
 		renderPassInfo.pClearValues = &clearColor;
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+		VkViewport viewport{};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = static_cast<float>(swapChainExtent.width);
+		viewport.height = static_cast<float>(swapChainExtent.height);
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+		VkRect2D scissor{};
+		scissor.offset = {0, 0};
+		scissor.extent = swapChainExtent;
+		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+		vkCmdEndRenderPass(commandBuffer);
+
+		result = vkEndCommandBuffer(commandBuffer);
+		if (result != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to record command buffer!");
+		}
 	}
 
 	void setupDebugMessenger()
