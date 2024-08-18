@@ -766,6 +766,9 @@ private:
 	{
 		vkWaitForFences(logicalDevice, 1, &inFlightFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 		vkResetFences(logicalDevice, 1, &inFlightFence);
+
+		uint32_t imageIndex;
+		vkAcquireNextImageKHR(logicalDevice, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 	}
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
