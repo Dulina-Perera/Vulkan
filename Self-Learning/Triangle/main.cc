@@ -112,6 +112,7 @@ private:
 	VkExtent2D swapChainExtent;
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
+	std::vector<VkFramebuffer> swapChainFramebuffers;
 
 	VkRenderPass renderPass;
 	VkPipelineLayout pipelineLayout;
@@ -248,6 +249,11 @@ private:
 
 	void cleanup()
 	{
+		for (VkFramebuffer framebuffer : swapChainFramebuffers)
+		{
+			vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
+		}
+
 		vkDestroyPipeline(logicalDevice, graphicsPipeline, nullptr);
 
 		vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
@@ -272,6 +278,31 @@ private:
 
 		glfwDestroyWindow(window);
 		glfwTerminate();
+	}
+
+	void createFrameBuffers()
+	{
+		swapChainFramebuffers.resize(swapChainImageViews.size());
+
+		for (std::size_t i = 0; i < swapChainImageViews.size(); i++)
+		{
+			VkImageView attachments[] = {swapChainImageViews[i]};
+
+			VkFramebufferCreateInfo framebufferInfo{};
+			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferInfo.renderPass = renderPass;
+			framebufferInfo.attachmentCount = 1;
+			framebufferInfo.pAttachments = attachments;
+			framebufferInfo.width = swapChainExtent.width;
+			framebufferInfo.height = swapChainExtent.height;
+			framebufferInfo.layers = 1;
+
+			VkResult result = vkCreateFramebuffer(logicalDevice, &framebufferInfo, nullptr, &swapChainFramebuffers[i]);
+			if (result != VK_SUCCESS)
+			{
+				throw std::runtime_error("Failed to create framebuffer!");
+			}
+		}
 	}
 
 	void createGraphicsPipeline()
@@ -745,6 +776,7 @@ private:
 		createImageViews();
 		createRenderPass();
 		createGraphicsPipeline();
+		createFrameBuffers();
 	}
 
 	void initWindow()
