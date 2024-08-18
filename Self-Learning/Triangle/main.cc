@@ -769,6 +769,9 @@ private:
 
 		uint32_t imageIndex;
 		vkAcquireNextImageKHR(logicalDevice, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+		vkResetCommandBuffer(commandBuffer, 0);
+		recordCommandBuffer(commandBuffer, imageIndex);
 	}
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
